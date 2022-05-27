@@ -1,7 +1,6 @@
 import time
 
 from flask import Blueprint, session, redirect, request, render_template, send_from_directory
-from utils.spider import get_comment
 from utils.sql import SQLHelper
 import re
 import json
@@ -50,10 +49,10 @@ def spider():
     return json.dumps(return_dict, ensure_ascii=False)
 
 
-# 实际接收文件下载
-# @us.route('/download/', methods=['POST'])
-# def download():
-#     fp = 'spider_admin.csv'
-#
-#     print('send file')
-#     return send_from_directory('static/data/', fp, as_attachment=True)
+# 文件下载
+@us.route('/download/', methods=['POST'])
+def download():
+    # fp = 'spider_admin.csv'
+    fp = request.args.get('fp')
+    print('send file')
+    return send_from_directory('static/data/', fp, as_attachment=True)

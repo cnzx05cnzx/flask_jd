@@ -84,7 +84,7 @@ def update():
             return "更新失败"
 
 
-# 上传csv文件写入数据库
+# 接受需要分析的数据文件
 @fi.route('/analysis/', methods=['POST'], strict_slashes=False)
 def analysis():
     data = {
