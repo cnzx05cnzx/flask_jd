@@ -8,8 +8,9 @@ import base64
 import pandas as pd
 import re
 
-
 # 使用依存句法分析获取候补频繁项集
+from gensim.models import KeyedVectors
+
 
 def is_Chinese(word):
     for ch in word:
@@ -247,14 +248,16 @@ def find_word(tar, word):
 
 
 def sentiment(words, neg_words, pos_words, wew):
-    # data 所有属性   text_li 属性对应句子   ress 评分结果
+    # data 所有属性   text_li 属性对应句子   ress 评分结果  comments 好坏评数量 0好 1坏
     data = []
     text_li = {}
     ress = {}
+    comments = {}
     for item in wew.items():
         data.extend(item[1])
         text_li[item[0]] = []
         ress[item[0]] = 0.0
+        comments[item[0]] = [0, 0]
 
     sum = 0
     for index, row in words.iterrows():
@@ -279,16 +282,19 @@ def sentiment(words, neg_words, pos_words, wew):
                     if temp[i] in neg_words:
                         if i >= 1 and temp[i - 1] == '不':
                             ress[find_word(t, wew)] += 1
+                            comments[find_word(t, wew)][0] += 1
                         else:
                             ress[find_word(t, wew)] -= 1
+                            comments[find_word(t, wew)][1] += 1
 
                         break
                     elif temp[i] in pos_words:
                         if i >= 1 and temp[i - 1] == '不':
                             ress[find_word(t, wew)] -= 1
+                            comments[find_word(t, wew)][1] += 1
                         else:
                             ress[find_word(t, wew)] += 1
-
+                            comments[find_word(t, wew)][0] += 1
                         break
                     else:
                         i -= 1
@@ -301,4 +307,41 @@ def sentiment(words, neg_words, pos_words, wew):
     for (k, v) in ress.items():
         ress[k] = (1.0 * v / sum + 1) * 2.5
 
-    return ress, text_li
+    return ress, text_li, comments
+
+
+# 两种分数均衡计算
+def all_score(x, y):
+    ress = {}
+    for a, b in zip(x.items(), y.items()):
+        ress[a[0]] = round(0.5 * a[1] + 0.5 * b[1], 2)
+    print(ress)
+    return ress
+
+
+# 各属性相似度
+def get_cos(words):
+    wv = KeyedVectors.load("../static/addition/wv.wordvectors", mmap='r')
+    words['手机'] = 1
+    ress = []
+    # texts = ['屏幕', '外观', '速度']
+    for item in words.items():
+        temp = []
+        for itemm in words.items():
+            temp.append(round(wv.similarity(item[0], itemm[0]), 2))
+        ress.append(temp)
+    print(ress)
+
+    return ress
+
+
+# 评论占比
+def get_pie(words):
+    summ = 0
+    for item in words.items():
+        summ += item[1][0] + item[1][1]
+    ress = {}
+    for item in words.items():
+        ress[item[0]] = round(1.0 * (item[1][0] + item[1][1]) / summ, 2)
+    print(ress)
+    return ress
